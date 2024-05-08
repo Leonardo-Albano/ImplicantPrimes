@@ -82,27 +82,26 @@ Minterm*** groupByOnes(Minterm **mintermsList, int listSize, int* mintermGroups,
 
     for (int i = 0; i < listSize; i++) {
         int countOfOnes = mintermsList[i]->countOfOnes;
-        printf("\nCount of ones: %s\n", mintermsList[i]->binaryRepresentation);
-        Minterm* minterm = malloc(sizeof(Minterm));
-        if (minterm == NULL) {
-            fprintf(stderr, "Memory allocation failed.\n");
-            exit(EXIT_FAILURE);
-        }
+
+        Minterm* minterm = allocMinterm();
 
         // Allocate memory for binaryRepresentation and copy the values
-        minterm->binaryRepresentation = malloc((NUMBER_OF_BITS + 1) * sizeof(char));
+        // minterm->binaryRepresentation = malloc((NUMBER_OF_BITS + 1) * sizeof(char));
         strcpy(minterm->binaryRepresentation, mintermsList[i]->binaryRepresentation);
+        minterm->countOfOnes = mintermsList[i]->countOfOnes;
 
-        // Allocate memory for originalNumbers array
-        minterm->originalNumbers = malloc(iteration * sizeof(int));
+        printf("\nBinary: %s", minterm->binaryRepresentation);
+        printf("\nCount Of Ones: %d\n", minterm->countOfOnes);
+        printf("\nOriginal Numbers:");
         for (int original_num_index = 0; original_num_index < iteration; original_num_index++)
         {
             minterm->originalNumbers[original_num_index] = mintermsList[i]->originalNumbers[original_num_index];  // Assuming binary strings represent integers
+            printf("%d, ", minterm->originalNumbers[original_num_index]);
         }
+        printf("\n");
         
 
         primesGroups[countOfOnes][lastIndexGroups[countOfOnes]++] = minterm;  // Save the address of the minterm
-        printf("\nteste\n");
     }
 
     return primesGroups;
@@ -133,7 +132,7 @@ Minterm** allocMintermList(int listSize) {
     return mintermList;
 }
 
-Minterm*** groupMinterms(int* lastIndexGroups, Minterm**** primesGroups, int* listSize) {
+Minterm*** groupMinterms(int* lastIndexGroups, Minterm*** primesGroups, int* listSize) {
     Minterm*** newPrimesGroups = allocPrimesGroups(NUMBER_OF_BITS);
     int newLastIndexGroups[NUMBER_OF_BITS];
     for (int i = 0; i < NUMBER_OF_BITS; i++) {
@@ -143,8 +142,8 @@ Minterm*** groupMinterms(int* lastIndexGroups, Minterm**** primesGroups, int* li
     int totalMinterms = 0;
     for (int group = 0; group < NUMBER_OF_BITS; group++) {
         printf("\nInitiating group %d\n", group);
-        Minterm** currentGroup = (*primesGroups)[group];
-        Minterm** nextGroup = (*primesGroups)[group + 1];
+        Minterm** currentGroup = (primesGroups)[group];
+        Minterm** nextGroup = (primesGroups)[group + 1];
 
         for (int currentPrimeIndex = 0; currentPrimeIndex < lastIndexGroups[group]; currentPrimeIndex++) {
             Minterm* currentPrime = currentGroup[currentPrimeIndex];
@@ -179,11 +178,12 @@ Minterm*** groupMinterms(int* lastIndexGroups, Minterm**** primesGroups, int* li
                     newMinterm->originalNumbers[0] = currentPrime->originalNumbers[0];
                     newMinterm->originalNumbers[1] = nextPrime->originalNumbers[0];
                     
-                    if (currentPrime->countOfOnes > nextPrime->countOfOnes) {
+                    if (currentPrime->countOfOnes < nextPrime->countOfOnes) {
                         newMinterm->countOfOnes = currentPrime->countOfOnes - 1;
                     } else {
                         newMinterm->countOfOnes = nextPrime->countOfOnes - 1;
                     }
+                    printf("ONE - %d\n", currentPrime->countOfOnes);
 
                     newPrimesGroups[group][newLastIndexGroups[group]++] = newMinterm;
                     printf("%s-%s different in one = %s\n", currentPrime->binaryRepresentation, nextPrime->binaryRepresentation, newMinterm->binaryRepresentation);
@@ -193,9 +193,9 @@ Minterm*** groupMinterms(int* lastIndexGroups, Minterm**** primesGroups, int* li
         }
     }
 
-    for (int i = 0; i < NUMBER_OF_BITS; i++) {
-        lastIndexGroups[i] = newLastIndexGroups[i];
-    }
+    // for (int i = 0; i < NUMBER_OF_BITS; i++) {
+    //     lastIndexGroups[i] = newLastIndexGroups[i];
+    // }
 
     *listSize = totalMinterms;
     return newPrimesGroups;

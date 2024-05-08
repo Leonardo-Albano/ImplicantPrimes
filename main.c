@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
     Minterm*** primesGroups = groupByOnes(mintermsList, listSize, mintermGroups, lastIndexGroups, 1);
     printPrimesGroups(lastIndexGroups, primesGroups);
-    primesGroups = groupMinterms(lastIndexGroups, &primesGroups, &listSize);
+    primesGroups = groupMinterms(lastIndexGroups, primesGroups, &listSize);
     printPrimesGroups(lastIndexGroups, primesGroups);
 
     printf("\nSecond Iteration!!!\n");
@@ -46,10 +46,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < listSize; i++) {
         newLastIndexGroups[i] = 0;
     }
-    Minterm** newMintermsList = allocMintermList(listSize);;
+    Minterm** newMintermsList = allocMintermList(listSize);
     newMintermsList = flattenPrimesGroups(primesGroups, lastIndexGroups, newMintermsList);
-    primesGroups = groupByOnes(newMintermsList, listSize, mintermGroups, newLastIndexGroups, 2);
-    printPrimesGroups(newLastIndexGroups, primesGroups);
+    
+    Minterm*** newPrimesGroups = groupByOnes(newMintermsList, listSize, mintermGroups, newLastIndexGroups, 2);
+    printPrimesGroups(newLastIndexGroups, newPrimesGroups);
 
     // freeMemoryGroups(primesGroups, mintermGroups, NUMBER_OF_BITS + 1);  // Include the group for zero ones
     // freeMemory(mintermsList, NULL, 0);

@@ -16,7 +16,7 @@ Minterm*** groupByOnes(Minterm **mintermsList, int listSize, int* mintermGroups,
 Minterm*** allocPrimesGroups(int listSize);
 void printPrimesGroups(int* lastIndexGroups, Minterm*** primesGroups);
 
-Minterm*** groupMinterms(int* lastIndexGroups, Minterm**** primesGroups, int* listSize);
+Minterm*** groupMinterms(int* lastIndexGroups, Minterm*** primesGroups, int* listSize);
 
 void freeMemory(char **stringsPointer, int* counts, int numStrings);
 void freeMemoryGroups(char ***groups, int* counts, int numGroups);
