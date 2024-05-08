@@ -10,16 +10,15 @@ int main(int argc, char *argv[]) {
     }
 
     int listSize = argc - 1;
-    char **stringsPointer = alocArrayList(listSize);
+    Minterm **mintermsList = allocMintermList(listSize);
 
     for (int i = 0; i < listSize; i++) {
-        convertToString(i, atoi(argv[i+1]), &stringsPointer);
+        convertToString(i, atoi(argv[i+1]), mintermsList);
     }
 
     for (int i = 0; i < listSize; i++) {
-        printf("\nBinary representation of %d: %s\n", atoi(argv[i+1]), &stringsPointer[i][1]);
-        int onesCount = stringsPointer[i][0] - '0'; // Convert character back to integer
-        printf("Number of ones in binary representation: %d\n", onesCount);
+        printf("\nBinary representation of %d: %s\n", mintermsList[i]->originalNumbers[0], mintermsList[i]->binaryRepresentation);
+        printf("Number of ones in binary representation: %d\n", mintermsList[i]->countOfOnes);
     }
 
     int mintermGroups[NUMBER_OF_BITS + 1];  // Array to store counts of ones for each group
@@ -32,29 +31,28 @@ int main(int argc, char *argv[]) {
         lastIndexGroups[i] = 0;
     }
 
-    char*** primesGroups = groupByOnes(stringsPointer, listSize, mintermGroups, lastIndexGroups);
-
+    Minterm*** primesGroups = groupByOnes(mintermsList, listSize, mintermGroups, lastIndexGroups, 1);
     printPrimesGroups(lastIndexGroups, primesGroups);
-    groupMinterms(lastIndexGroups, primesGroups);
+    primesGroups = groupMinterms(lastIndexGroups, &primesGroups, &listSize);
     printPrimesGroups(lastIndexGroups, primesGroups);
-    // // Print the grouped binary strings for each group
-    // for (int i = 0; i <= NUMBER_OF_BITS; i++) {  // Include the group for zero ones
-    //     printf("Group %d (Count of Ones: %d):\n", i, i);
-    //     for (int j = 0; j < mintermGroups[i]; j++) {
-    //         printf("%s\n", primesGroups[i][j]);
-    //     }
-    // }
 
-    // groupMinterms(stringsPointer);
+    printf("\nSecond Iteration!!!\n");
 
-    // printf("\n---------------Grouped Minterms---------------\n");
-    
-    // for (int i = 0; i < NUMBER_OF_BITS - 1; i++) {
-    //     printf("Group %d (Count of Ones: %d):\n", i, i);
-    //     printf("%s\n", stringsPointer[i]);
-    // }
+    for (int group = 0; group <= NUMBER_OF_BITS; group++) {
+        mintermGroups[group] = 0;
+    }
 
-    freeMemoryGroups(primesGroups, mintermGroups, NUMBER_OF_BITS + 1);  // Include the group for zero ones
-    freeMemory(stringsPointer, NULL, 0);
+    int newLastIndexGroups[listSize];
+    for (int i = 0; i < listSize; i++) {
+        newLastIndexGroups[i] = 0;
+    }
+    Minterm** newMintermsList = allocMintermList(listSize);;
+    newMintermsList = flattenPrimesGroups(primesGroups, lastIndexGroups, newMintermsList);
+    primesGroups = groupByOnes(newMintermsList, listSize, mintermGroups, newLastIndexGroups, 2);
+    printPrimesGroups(newLastIndexGroups, primesGroups);
+
+    // freeMemoryGroups(primesGroups, mintermGroups, NUMBER_OF_BITS + 1);  // Include the group for zero ones
+    // freeMemory(mintermsList, NULL, 0);
+    freeMintermsList(mintermsList, listSize);
     return 0;
 }

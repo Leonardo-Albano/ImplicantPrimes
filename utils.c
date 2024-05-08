@@ -5,80 +5,15 @@
 
 int NUMBER_OF_BITS = 4;
 
-char** alocArrayList(int listSize){
-    char **stringsPointer = malloc(listSize * sizeof(char *));
-
-    if (stringsPointer == NULL) {
-        fprintf(stderr, "Memory allocation failed.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    for (int i = 0; i < listSize; i++) {
-
-        int additionalBits = 2; // One to the \0, and another to the count of ones
-        stringsPointer[i] = malloc((NUMBER_OF_BITS + additionalBits) * sizeof(char));
-        if (stringsPointer[i] == NULL) {
-            fprintf(stderr, "Memory allocation failed.\n");
-            exit(EXIT_FAILURE);
-        }
-
-    }
-
-    return stringsPointer;
-}
-
-void convertToString(int iterationIndex, int num, char*** stringsPointer) {
-
-    char* binaryString = (char*)malloc((NUMBER_OF_BITS + 1) * sizeof(char));
-    if (binaryString == NULL) {
-        fprintf(stderr, "Memory allocation failed.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    int onesCount = 0;
-    int leastSignificantBit = NUMBER_OF_BITS - 1;
-
-    for (int i = leastSignificantBit; i >= 0; i--) {
-        int bit = (num >> i) & 1;
-        binaryString[leastSignificantBit - i] = bit + '0';  // Convert bit to character ('0' or '1')
-
-        if (bit == 1) {
-            onesCount++;  // Increment count if the bit is '1'
-        }
-    }
-    binaryString[NUMBER_OF_BITS] = '\0';
-
-    (*stringsPointer)[iterationIndex][0] = onesCount + '0';  // Convert to character
-    strcpy(&((*stringsPointer)[iterationIndex][1]), binaryString);  // Copy binaryString after the count
-
-    free(binaryString);
-}
-
-char*** groupByOnes(char** stringsPointer, int listSize, int* mintermGroups, int* lastIndexGroups) {
-
-    char*** primesGroups = alocPrimesGroups(listSize);
-
-    for (int i = 0; i < listSize; i++) {
-        int countOfOnes = stringsPointer[i][0] - '0';  // Convert character back to integer
-
-        // primesGroups[countOfOnes][mintermGroups[countOfOnes]] = &stringsPointer[i][1];  // Save the address of the string
-        primesGroups[countOfOnes][lastIndexGroups[countOfOnes]] = &stringsPointer[i][1];  // Save the address of the string
-        lastIndexGroups[countOfOnes]++;
-        // mintermGroups[countOfOnes]++;
-    }
-
-    return primesGroups;
-}
-
-char*** alocPrimesGroups(int listSize){
-    char*** primesGroups = malloc((NUMBER_OF_BITS) * sizeof(char**));
+Minterm*** allocPrimesGroups(int listSize) {
+    Minterm*** primesGroups = malloc(NUMBER_OF_BITS * sizeof(Minterm**));
     if (primesGroups == NULL) {
         fprintf(stderr, "Memory allocation failed.\n");
         exit(EXIT_FAILURE);
     }
-    
+
     for (int i = 0; i <= NUMBER_OF_BITS; i++) {  // Include the group for zero ones
-        primesGroups[i] = malloc(listSize * sizeof(char*));
+        primesGroups[i] = malloc(listSize * sizeof(Minterm*));
         if (primesGroups[i] == NULL) {
             fprintf(stderr, "Memory allocation failed.\n");
             exit(EXIT_FAILURE);
@@ -88,65 +23,190 @@ char*** alocPrimesGroups(int listSize){
     return primesGroups;
 }
 
-void printPrimesGroups(int* lastIndexGroups, char*** primesGroups){
-    for (int group = 0; group <= NUMBER_OF_BITS; group++) {
+Minterm* allocMinterm() {
+    Minterm* minterm = malloc(sizeof(Minterm));
+    if (minterm == NULL) {
+        fprintf(stderr, "Memory allocation failed for Minterm.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    minterm->binaryRepresentation = malloc((NUMBER_OF_BITS + 1) * sizeof(char));
+    if (minterm->binaryRepresentation == NULL) {
+        fprintf(stderr, "Memory allocation failed for binaryRepresentation.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    minterm->originalNumbers = malloc(NUMBER_OF_BITS * sizeof(int));
+    if (minterm->originalNumbers == NULL) {
+        fprintf(stderr, "Memory allocation failed for originalNumbers.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Initialize the binaryRepresentation array to zeros
+    for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        minterm->binaryRepresentation[i] = '0';
+        minterm->originalNumbers[i] = 0;
+    }
+    minterm->binaryRepresentation[NUMBER_OF_BITS] = '\0'; // Null-terminate the string
+
+    return minterm;
+}
+
+void convertToString(int iterationIndex, int num, Minterm** mintermsList) {
+    char* binaryString = (char*)malloc((NUMBER_OF_BITS + 1) * sizeof(char));
+    if (binaryString == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int countOfOnes = 0;
+    int leastSignificantBit = NUMBER_OF_BITS - 1;
+
+    for (int i = leastSignificantBit; i >= 0; i--) {
+        int bit = (num >> i) & 1;
+        binaryString[leastSignificantBit - i] = bit + '0';  // Convert bit to character ('0' or '1')
+
+        if (bit == 1) {
+            countOfOnes++;  // Increment count if the bit is '1'
+        }
+    }
+    binaryString[NUMBER_OF_BITS] = '\0';
+
+    mintermsList[iterationIndex]->originalNumbers[0] = num;
+    mintermsList[iterationIndex]->binaryRepresentation = binaryString;
+    mintermsList[iterationIndex]->countOfOnes = countOfOnes;
+}
+
+Minterm*** groupByOnes(Minterm **mintermsList, int listSize, int* mintermGroups, int* lastIndexGroups, int iteration) {
+    Minterm*** primesGroups = allocPrimesGroups(listSize);
+
+    for (int i = 0; i < listSize; i++) {
+        int countOfOnes = mintermsList[i]->countOfOnes;
+        printf("\nCount of ones: %s\n", mintermsList[i]->binaryRepresentation);
+        Minterm* minterm = malloc(sizeof(Minterm));
+        if (minterm == NULL) {
+            fprintf(stderr, "Memory allocation failed.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Allocate memory for binaryRepresentation and copy the values
+        minterm->binaryRepresentation = malloc((NUMBER_OF_BITS + 1) * sizeof(char));
+        strcpy(minterm->binaryRepresentation, mintermsList[i]->binaryRepresentation);
+
+        // Allocate memory for originalNumbers array
+        minterm->originalNumbers = malloc(iteration * sizeof(int));
+        for (int original_num_index = 0; original_num_index < iteration; original_num_index++)
+        {
+            minterm->originalNumbers[original_num_index] = mintermsList[i]->originalNumbers[original_num_index];  // Assuming binary strings represent integers
+        }
+        
+
+        primesGroups[countOfOnes][lastIndexGroups[countOfOnes]++] = minterm;  // Save the address of the minterm
+        printf("\nteste\n");
+    }
+
+    return primesGroups;
+}
+
+
+void printPrimesGroups(int* lastIndexGroups, Minterm*** primesGroups) {
+    for (int group = 0; group <= NUMBER_OF_BITS-1; group++) { //dont print the last group
         printf("Group %d (Count of Ones: %d):\n", group, group);
         for (int i = 0; i < lastIndexGroups[group]; i++) {
-            printf("%s\n", primesGroups[group][i]);
+            printf("%s\n", primesGroups[group][i]->binaryRepresentation);
         }
     }
 }
 
-void groupMinterms(int* lastIndexGroups, char*** primesGroups) {
+Minterm** allocMintermList(int listSize) {
+    Minterm** mintermList = malloc(listSize * sizeof(Minterm*));
+    if (mintermList == NULL) {
+        fprintf(stderr, "Memory allocation failed for Minterm list.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Initialize each Minterm instance in the list
+    for (int i = 0; i < listSize; i++) {
+        mintermList[i] = allocMinterm();
+    }
+
+    return mintermList;
+}
+
+Minterm*** groupMinterms(int* lastIndexGroups, Minterm**** primesGroups, int* listSize) {
+    Minterm*** newPrimesGroups = allocPrimesGroups(NUMBER_OF_BITS);
+    int newLastIndexGroups[NUMBER_OF_BITS];
+    for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        newLastIndexGroups[i] = 0;
+    }
+
+    int totalMinterms = 0;
     for (int group = 0; group < NUMBER_OF_BITS; group++) {
-        printf("Initiating group %d\n", group);
-        char** currentGroup = primesGroups[group];
-        char** nextGroup = primesGroups[group+1];
-        
-        for (int currentPrimeIndex = 0; currentPrimeIndex < lastIndexGroups[group]; currentPrimeIndex++)
-        {
-            char* currentPrime = currentGroup[currentPrimeIndex];
-            char* currentPrimeCopy = malloc((strlen(currentPrime) + 1) * sizeof(char));
+        printf("\nInitiating group %d\n", group);
+        Minterm** currentGroup = (*primesGroups)[group];
+        Minterm** nextGroup = (*primesGroups)[group + 1];
 
-            for (int nextPrimeIndex = 0; nextPrimeIndex < lastIndexGroups[group+1]; nextPrimeIndex++)
-            {
-                char* nextPrime = nextGroup[nextPrimeIndex];
-                char* nextPrimeCopy = malloc((strlen(nextPrime) + 1) * sizeof(char));
-                
-                strcpy(currentPrimeCopy, currentPrime);
-                strcpy(nextPrimeCopy, nextPrime);
+        for (int currentPrimeIndex = 0; currentPrimeIndex < lastIndexGroups[group]; currentPrimeIndex++) {
+            Minterm* currentPrime = currentGroup[currentPrimeIndex];
 
-                int differentBit = NUMBER_OF_BITS + 1;
+            for (int nextPrimeIndex = 0; nextPrimeIndex < lastIndexGroups[group + 1]; nextPrimeIndex++) {
+                Minterm* nextPrime = nextGroup[nextPrimeIndex];
+
+                int differentBit = NUMBER_OF_BITS + 1; // Set a unreachable bit
                 int diffBitsCount = 0;
 
-                for (int bit = 0; bit < NUMBER_OF_BITS; bit++)
-                {
-                    if(currentPrime[bit] != nextPrime[bit]){
+                for (int bit = 0; bit < NUMBER_OF_BITS; bit++) {
+                    if (currentPrime->binaryRepresentation[bit] != nextPrime->binaryRepresentation[bit]) {
                         diffBitsCount++;
-                        differentBit = bit;        
+                        differentBit = bit;
                     }
                 }
 
-                if(diffBitsCount == 1){
-                    currentPrimeCopy[differentBit] = 'x';
-                    nextPrimeCopy[differentBit] = 'x';
+                if (diffBitsCount == 1) {
+                    // Create a new combined minterm
+                    Minterm* newMinterm = malloc(sizeof(Minterm));
+                    if (newMinterm == NULL) {
+                        fprintf(stderr, "Memory allocation failed.\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    // Allocate memory for binaryRepresentation and copy the values
+                    newMinterm->binaryRepresentation = malloc((NUMBER_OF_BITS + 1) * sizeof(char));
+                    strcpy(newMinterm->binaryRepresentation, currentPrime->binaryRepresentation);
+                    newMinterm->binaryRepresentation[differentBit] = 'x';
 
-                    printf("%s-%s different in one\n", currentPrimeCopy, nextPrimeCopy);
+                    // Allocate memory for originalNumbers array
+                    newMinterm->originalNumbers = malloc(2 * sizeof(int));
+                    newMinterm->originalNumbers[0] = currentPrime->originalNumbers[0];
+                    newMinterm->originalNumbers[1] = nextPrime->originalNumbers[0];
+                    
+                    if (currentPrime->countOfOnes > nextPrime->countOfOnes) {
+                        newMinterm->countOfOnes = currentPrime->countOfOnes - 1;
+                    } else {
+                        newMinterm->countOfOnes = nextPrime->countOfOnes - 1;
+                    }
+
+                    newPrimesGroups[group][newLastIndexGroups[group]++] = newMinterm;
+                    printf("%s-%s different in one = %s\n", currentPrime->binaryRepresentation, nextPrime->binaryRepresentation, newMinterm->binaryRepresentation);
+                    totalMinterms++;
                 }
             }
         }
     }
-    printf("\nfinished!\n");
-    //Continuar implementando essa parte, precisa salvar o binário com o x no lugar do binário real (talvez com um realoc igual ta no print)
-    //Precisa criar um array para salvar os valores representados nesse array
+
+    for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        lastIndexGroups[i] = newLastIndexGroups[i];
+    }
+
+    *listSize = totalMinterms;
+    return newPrimesGroups;
 }
 
-void freeMemory(char **stringsPointer, int* counts, int numStrings) {
-    if (stringsPointer != NULL) {
+void freeMemory(char **mintermsList, int* counts, int numStrings) {
+    if (mintermsList != NULL) {
         for (int i = 0; i < numStrings; i++) {
-            free(stringsPointer[i]);
+            free(mintermsList[i]);
         }
-        free(stringsPointer);
+        free(mintermsList);
     }
     if (counts != NULL) {
         free(counts);
@@ -168,4 +228,28 @@ void freeMemoryGroups(char ***groups, int* counts, int numGroups) {
     if (counts != NULL) {
         free(counts);  // Free memory for the counts array
     }
+}
+
+void freeMintermsList(Minterm** mintermsList, int numMinterms) {
+    if (mintermsList != NULL) {
+        for (int i = 0; i < numMinterms; i++) {
+            if (mintermsList[i] != NULL) {
+                free(mintermsList[i]->binaryRepresentation);
+                free(mintermsList[i]->originalNumbers);
+                free(mintermsList[i]);
+            }
+        }
+        free(mintermsList);
+    }
+}
+
+Minterm** flattenPrimesGroups(Minterm*** primesGroups, int* lastIndexGroups, Minterm** newMintermsList) {
+    int index = 0;
+    for (int group = 0; group <= NUMBER_OF_BITS; group++) {
+        for (int i = 0; i < lastIndexGroups[group]; i++) {
+            newMintermsList[index++] = primesGroups[group][i];
+        }
+    }
+
+    return newMintermsList;
 }
